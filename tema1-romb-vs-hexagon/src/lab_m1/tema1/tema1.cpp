@@ -77,13 +77,14 @@ Tema1::Tema1()
     this->maxHexagonHealth = 3;
     this->hexagonSpeed = 1;
     this->randomHexagonsCounter = 0;
-    this->randomHexagonsInterval = 7.0f;
+    this->randomHexagonsInterval = 2.0f;
     this->nrRandomHexagons = 1;
+    this->maxRandomHexagonsInterval = 7.0f;
 
     // Set up projectile data structures and parameters.
     this->projectiles = std::vector<std::vector<Entity*>>();
     this->projectiles.resize(this->gridY);
-    this->projectileSpeed = 100.0;
+    this->projectileSpeed = 300.0;
 
 
     // Set up pink star data structures and parameters.
@@ -174,7 +175,7 @@ void Tema1::loadAllMeshes() {
 
     // Load the star.
     Mesh* mesh = new Mesh("star");
-    mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "star.obj");
+    mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "meshes"), "star.obj");
     meshes[mesh->GetMeshID()] = mesh;
 }
 
@@ -192,16 +193,16 @@ void Tema1::FrameStart()
 
 void Tema1::Update(float deltaTimeSeconds)
 {
+    if (this->lives == 0) {
+
+        // Exit game.
+        return;
+        Engine::Exit();
+    }
+
     this->deltaTimeSeconds = deltaTimeSeconds;
     this->randomStarsCounter += deltaTimeSeconds;
     this->randomHexagonsCounter += deltaTimeSeconds;
-
-    if (this->lives == 0) {
-        
-        // Exit game.
-
-    }
-
 
     if (this->randomStarsCounter >= this->randomStarsInterval) {
 
@@ -216,6 +217,14 @@ void Tema1::Update(float deltaTimeSeconds)
 
     if (this->randomHexagonsCounter >= this->randomHexagonsInterval) {
         this->randomHexagonsCounter = 0;
+
+        // Generate random interval.
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<double> rand(5.0f, this->maxRandomHexagonsInterval);
+
+        this->randomHexagonsInterval = rand(gen);
+
         spawnRandomHexagons();
     }
 
@@ -368,7 +377,8 @@ void Tema1::spawnProjectiles() {
                 }
 
                 
-                if (turret->getX() + this->turretSize * 0.9 < hexagons[i][k]->getX() - eps) {
+                if (turret->getX() + this->turretSize * 0.9 < hexagons[i][k]->getX() &&
+                    hexagons[i][k]->getX() < this->resolution.x - eps / 3) {
 
                     auto projectile = new Entity();
 
@@ -638,7 +648,9 @@ void Tema1::renderHexagons() {
 
             modelMatrix = glm::mat3(1);
             modelMatrix *= transform2D::Translate(hexagon->getX(), hexagon->getY());
-            modelMatrix *= transform2D::Scale(scaleX * 0.7f, scaleY * 0.7f);
+
+            float scale = (float)hexagon->getHealth() / this->maxHexagonHealth * scaleX * 0.7;
+            modelMatrix *= transform2D::Scale(scale, scale);
             modelMatrix *= transform2D::Rotate(glm::radians(-45.0));
             RenderMesh2D(meshes[hexagon->getModelName()], modelMatrix, colors["Turquoise"]);
 

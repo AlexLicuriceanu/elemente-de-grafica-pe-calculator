@@ -89,6 +89,7 @@ namespace m1
         float hexagonSpeed;
         float randomHexagonsCounter;
         float randomHexagonsInterval;
+        float maxRandomHexagonsInterval;
 
         // Projectiles.
         std::vector<std::vector<Entity*>> projectiles;
